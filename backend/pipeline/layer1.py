@@ -16,9 +16,17 @@ import anthropic
 from backend.config import settings
 from backend.database import get_conn
 
-MODEL = "claude-haiku-4-5-20251001"
-BATCH_SIZE = 50  # articles per API call
-MAX_OUTPUT_TOKENS = 4096  # enough for 50 articles (~70 tokens each)
+def _get_model():
+    from backend.api.routers.settings import get_setting
+    return get_setting("layer1Model", settings.layer1_model)
+
+def _get_batch_size():
+    from backend.api.routers.settings import get_setting
+    return get_setting("layer1BatchSize", settings.layer1_batch_size)
+
+def _get_max_tokens():
+    from backend.api.routers.settings import get_setting
+    return get_setting("layer1MaxTokens", settings.layer1_max_tokens)
 
 # Comprehensive keyword mappings for extraction
 # ticker, company name, short name, CEO, key products, subsidiaries
@@ -144,8 +152,8 @@ def process_batch_group(
 
     try:
         message = client.messages.create(
-            model=MODEL,
-            max_tokens=MAX_OUTPUT_TOKENS,
+            model=_get_model(),
+            max_tokens=_get_max_tokens(),
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -217,8 +225,8 @@ def run_layer1(symbol: str, max_articles: int = 10000) -> Dict[str, Any]:
         "irrelevant": 0, "errors": 0, "api_calls": 0,
     }
 
-    for i in range(0, len(articles), BATCH_SIZE):
-        chunk = articles[i : i + BATCH_SIZE]
+    for i in range(0, len(articles), batch_size):
+        chunk = articles[i : i + batch_size]
         stats = process_batch_group(symbol, chunk)
 
         total_stats["processed"] += stats["processed"]
@@ -239,9 +247,12 @@ def submit_batch_api(symbol: str, articles: List[Dict[str, Any]]) -> str:
     """Submit to Anthropic Batch API for async processing."""
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
+    batch_size = _get_batch_size()
+    model = _get_model()
+    max_tokens = _get_max_tokens()
     requests = []
-    for i in range(0, len(articles), BATCH_SIZE):
-        chunk = articles[i : i + BATCH_SIZE]
+    for i in range(0, len(articles), batch_size):
+        chunk = articles[i : i + batch_size]
         chunk_ids = "|".join(a["id"] for a in chunk)
         prompt = _build_batch_prompt(symbol, chunk)
 
@@ -249,8 +260,8 @@ def submit_batch_api(symbol: str, articles: List[Dict[str, Any]]) -> str:
             {
                 "custom_id": f"{symbol}|{i}|{chunk_ids}",
                 "params": {
-                    "model": MODEL,
-                    "max_tokens": MAX_OUTPUT_TOKENS,
+                    "model": model,
+                    "max_tokens": max_tokens,
                     "messages": [{"role": "user", "content": prompt}],
                 },
             }

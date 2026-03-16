@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface SimilarArticle {
   news_id: string;
@@ -51,35 +53,37 @@ function statPct(v: number | null) {
 }
 
 export default function SimilarNewsPanel({ newsId, symbol, onClose }: Props) {
+  const { t } = useTranslation();
+  const { settings } = useSettings();
   const [data, setData] = useState<SimilarResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     axios
-      .post<SimilarResponse>('/api/analysis/similar', { news_id: newsId, symbol, top_k: 20 })
+      .post<SimilarResponse>('/api/analysis/similar', { news_id: newsId, symbol, top_k: settings.similarArticlesTopK })
       .then((res) => setData(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [newsId, symbol]);
+  }, [newsId, symbol, settings.similarArticlesTopK]);
 
   return (
     <div className="news-panel similar-panel">
       <div className="news-panel-header">
-        <h2>Similar Articles</h2>
-        <button className="range-clear-btn" onClick={onClose}>Close</button>
+        <h2>{t('similarNews.title')}</h2>
+        <button className="range-clear-btn" onClick={onClose}>{t('similarNews.close')}</button>
       </div>
 
       {loading ? (
-        <div className="news-empty">Finding similar articles...</div>
+        <div className="news-empty">{t('similarNews.finding')}</div>
       ) : !data || data.similar_articles.length === 0 ? (
-        <div className="news-empty">No similar articles found</div>
+        <div className="news-empty">{t('similarNews.noResults')}</div>
       ) : (
         <div className="news-list">
           {/* Query article */}
           {data.query?.title && (
             <div className="similar-query-card">
-              <div className="similar-query-label">Query Article</div>
+              <div className="similar-query-label">{t('similarNews.queryArticle')}</div>
               <div className="similar-query-title">{data.query.title}</div>
               <div className="similar-query-meta">
                 {data.query.symbol} · {data.query.trade_date || 'N/A'}
@@ -90,27 +94,27 @@ export default function SimilarNewsPanel({ newsId, symbol, onClose }: Props) {
           {/* Stats card */}
           <div className="similar-stats-card">
             <div className="similar-stats-header">
-              {data.stats.total} similar across {data.stats.cross_ticker_count} tickers
+              {t('similarNews.similarAcross', { total: data.stats.total, count: data.stats.cross_ticker_count })}
             </div>
             <div className="similar-stats-grid">
               <div className="similar-stat">
-                <span className="similar-stat-label">T+1 positive</span>
+                <span className="similar-stat-label">{t('similarNews.t1Positive')}</span>
                 <span className={`similar-stat-val ${(data.stats.positive_t1_pct ?? 0) > 50 ? 'up' : 'down'}`}>
                   {statPct(data.stats.positive_t1_pct)}
                 </span>
               </div>
               <div className="similar-stat">
-                <span className="similar-stat-label">T+5 positive</span>
+                <span className="similar-stat-label">{t('similarNews.t5Positive')}</span>
                 <span className={`similar-stat-val ${(data.stats.positive_t5_pct ?? 0) > 50 ? 'up' : 'down'}`}>
                   {statPct(data.stats.positive_t5_pct)}
                 </span>
               </div>
               <div className="similar-stat">
-                <span className="similar-stat-label">Avg T+1</span>
+                <span className="similar-stat-label">{t('similarNews.avgT1')}</span>
                 <span className="similar-stat-val">{pct(data.stats.avg_ret_t1)}</span>
               </div>
               <div className="similar-stat">
-                <span className="similar-stat-label">Avg T+5</span>
+                <span className="similar-stat-label">{t('similarNews.avgT5')}</span>
                 <span className="similar-stat-val">{pct(data.stats.avg_ret_t5)}</span>
               </div>
             </div>
@@ -121,7 +125,7 @@ export default function SimilarNewsPanel({ newsId, symbol, onClose }: Props) {
             <div key={`${art.news_id}-${art.symbol}`} className="news-card similar-card">
               <div className="similar-card-top">
                 <span className="similar-ticker-badge">{art.symbol}</span>
-                <span className="similar-score">{(art.similarity * 100).toFixed(0)}% match</span>
+                <span className="similar-score">{(art.similarity * 100).toFixed(0)}% {t('prediction.match')}</span>
               </div>
               <div className="news-title similar-title">{art.title}</div>
               <div className="news-card-footer">
