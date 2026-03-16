@@ -13,7 +13,13 @@ import anthropic
 from backend.config import settings
 from backend.database import get_conn
 
-MODEL = "claude-sonnet-4-5-20250929"
+def _get_model():
+    from backend.api.routers.settings import get_setting
+    return get_setting("layer2Model", settings.layer2_model)
+
+def _get_max_tokens():
+    from backend.api.routers.settings import get_setting
+    return get_setting("layer2MaxTokens", settings.layer2_max_tokens)
 
 
 def get_cached(news_id: str, symbol: str) -> Optional[Dict[str, Any]]:
@@ -64,8 +70,8 @@ Provide your analysis as JSON:
 Respond with JSON only."""
 
     message = client.messages.create(
-        model=MODEL,
-        max_tokens=1024,
+        model=_get_model(),
+        max_tokens=_get_max_tokens(),
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -109,7 +115,7 @@ def generate_story(symbol: str, csv_content: str) -> str:
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     message = client.messages.create(
-        model=MODEL,
+        model=_get_model(),
         max_tokens=4096,
         messages=[
             {
@@ -215,7 +221,7 @@ Related news during this period ({news_count} articles):
 Return JSON only."""
 
     message = client.messages.create(
-        model=MODEL,
+        model=_get_model(),
         max_tokens=2048,
         messages=[{"role": "user", "content": prompt}],
     )

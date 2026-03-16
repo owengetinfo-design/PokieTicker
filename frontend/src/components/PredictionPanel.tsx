@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-
+import { useSettings } from '../contexts/SettingsContext';
 
 interface Driver {
   name: string;
@@ -188,6 +188,7 @@ function renderStyledText(text: string): React.ReactNode[] {
 
 export default function PredictionPanel({ symbol }: Props) {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [forecast7, setForecast7] = useState<Forecast | null>(null);
   const [forecast30, setForecast30] = useState<Forecast | null>(null);
   const [loading, setLoading] = useState(false);
@@ -202,8 +203,9 @@ export default function PredictionPanel({ symbol }: Props) {
     if (!symbol) return;
     setLoading(true);
     setError('');
+    const win = settings.forecastWindow;
     Promise.all([
-      axios.get(`/api/predict/${symbol}/forecast?window=7`).then((res) => res.data as Forecast).catch(() => null),
+      axios.get(`/api/predict/${symbol}/forecast?window=${win}`).then((res) => res.data as Forecast).catch(() => null),
       axios.get(`/api/predict/${symbol}/forecast?window=30`).then((res) => res.data as Forecast).catch(() => null),
     ])
       .then(([f7, f30]) => {
@@ -212,7 +214,7 @@ export default function PredictionPanel({ symbol }: Props) {
         if (!f7 && !f30) setError('No model available');
       })
       .finally(() => setLoading(false));
-  }, [symbol]);
+  }, [symbol, settings.forecastWindow]);
 
   const keywords = useMemo(() => {
     const fc = forecast7 || forecast30;

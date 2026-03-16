@@ -10,6 +10,8 @@ import RangeQueryPopup from './components/RangeQueryPopup';
 import RangeNewsPanel from './components/RangeNewsPanel';
 import SimilarDaysPanel from './components/SimilarDaysPanel';
 import PredictionPanel from './components/PredictionPanel';
+import SettingsPanel from './components/SettingsPanel';
+import { SettingsProvider } from './contexts/SettingsContext';
 import './App.css';
 
 interface RangeSelection {
@@ -25,7 +27,7 @@ interface ArticleSelection {
   date: string;
 }
 
-function App() {
+function AppContent() {
   const { t } = useTranslation();
   const [activeTickers, setActiveTickers] = useState<string[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
@@ -50,6 +52,9 @@ function App() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCategoryIds, setActiveCategoryIds] = useState<string[]>([]);
   const [activeCategoryColor, setActiveCategoryColor] = useState<string | null>(null);
+
+  // Settings panel
+  const [showSettings, setShowSettings] = useState(false);
 
   // Chart area ref for popup positioning
   const chartAreaRef = useRef<HTMLDivElement>(null);
@@ -257,6 +262,11 @@ function App() {
           </div>
         ) : null}
         <div className="header-right">
+          <button className="settings-btn" onClick={() => setShowSettings(true)} title={t('settings.title')}>
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+              <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+            </svg>
+          </button>
           <a href="https://mitrui.com" target="_blank" rel="noopener noreferrer" className="header-link">
             mitrui.com
           </a>
@@ -313,7 +323,16 @@ function App() {
         </div>
       </main>
 
+      <SettingsPanel open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }
 

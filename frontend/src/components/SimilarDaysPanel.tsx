@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-
+import { useSettings } from '../contexts/SettingsContext';
 
 interface NewsSnippet {
   title: string;
@@ -42,6 +42,7 @@ interface Props {
 
 export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [data, setData] = useState<SimilarDaysData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,11 +51,11 @@ export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
     setLoading(true);
     setError('');
     axios
-      .get(`/api/predict/${symbol}/similar-days?date=${date}`)
+      .get(`/api/predict/${symbol}/similar-days?date=${date}&top_k=${settings.similarPeriodsTopK}`)
       .then((res) => setData(res.data))
       .catch(() => setError(t('similar.failed')))
       .finally(() => setLoading(false));
-  }, [symbol, date]);
+  }, [symbol, date, settings.similarPeriodsTopK]);
 
   return (
     <div className="news-panel">

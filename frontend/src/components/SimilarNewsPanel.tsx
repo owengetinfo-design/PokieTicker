@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
-
+import { useSettings } from '../contexts/SettingsContext';
 
 interface SimilarArticle {
   news_id: string;
@@ -54,17 +54,18 @@ function statPct(v: number | null) {
 
 export default function SimilarNewsPanel({ newsId, symbol, onClose }: Props) {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const [data, setData] = useState<SimilarResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     axios
-      .post<SimilarResponse>('/api/analysis/similar', { news_id: newsId, symbol, top_k: 20 })
+      .post<SimilarResponse>('/api/analysis/similar', { news_id: newsId, symbol, top_k: settings.similarArticlesTopK })
       .then((res) => setData(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [newsId, symbol]);
+  }, [newsId, symbol, settings.similarArticlesTopK]);
 
   return (
     <div className="news-panel similar-panel">
