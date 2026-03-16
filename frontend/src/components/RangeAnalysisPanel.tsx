@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 interface RangeAnalysis {
@@ -32,6 +33,7 @@ interface Props {
 }
 
 export default function RangeAnalysisPanel({ symbol, startDate, endDate, question, onClear }: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<RangeAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,14 +77,14 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
   return (
     <div className="news-panel range-panel">
       <div className="news-panel-header">
-        <h2>Range Analysis</h2>
-        <button className="range-clear-btn" onClick={onClear}>Clear</button>
+        <h2>{t('range.title')}</h2>
+        <button className="range-clear-btn" onClick={onClear}>{t('range.clear')}</button>
       </div>
 
       {loading ? (
         <div className="news-list" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
           <div className="range-spinner" />
-          <span style={{ color: '#aab', fontSize: 15 }}>AI Analyzing {startDate} to {endDate}...</span>
+          <span style={{ color: '#aab', fontSize: 15 }}>{t('range.aiAnalyzing', { start: startDate, end: endDate })}</span>
           <div className="ai-loading-skeleton">
             <div className="skeleton-line" style={{ width: '90%' }} />
             <div className="skeleton-line" style={{ width: '75%' }} />
@@ -112,7 +114,7 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
               </span>
             </div>
             <div className="range-meta">
-              {data.trading_days} trading days · {data.news_count} news articles
+              {data.trading_days} {t('range.tradingDays')} · {data.news_count} {t('range.newsArticles')}
             </div>
           </div>
 
@@ -126,7 +128,7 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
           {/* Key events */}
           {data.analysis.key_events?.length > 0 && (
             <div className="range-section">
-              <h3 className="range-section-title">Key Events</h3>
+              <h3 className="range-section-title">{t('range.keyEvents')}</h3>
               <ul className="range-events">
                 {data.analysis.key_events.map((evt, i) => (
                   <li key={i}>{evt}</li>
@@ -138,7 +140,7 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
           {/* Bullish factors */}
           {data.analysis.bullish_factors?.length > 0 && (
             <div className="range-section">
-              <h3 className="range-section-title">Bullish Factors</h3>
+              <h3 className="range-section-title">{t('range.bullishFactors')}</h3>
               {data.analysis.bullish_factors.map((f, i) => (
                 <div key={i} className="reason up">
                   <span className="reason-icon">+</span> {f}
@@ -150,7 +152,7 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
           {/* Bearish factors */}
           {data.analysis.bearish_factors?.length > 0 && (
             <div className="range-section">
-              <h3 className="range-section-title">Bearish Factors</h3>
+              <h3 className="range-section-title">{t('range.bearishFactors')}</h3>
               {data.analysis.bearish_factors.map((f, i) => (
                 <div key={i} className="reason down">
                   <span className="reason-icon">-</span> {f}
@@ -162,7 +164,7 @@ export default function RangeAnalysisPanel({ symbol, startDate, endDate, questio
           {/* Trend analysis */}
           {data.analysis.trend_analysis && (
             <div className="range-section">
-              <h3 className="range-section-title">Trend Analysis</h3>
+              <h3 className="range-section-title">{t('range.trendAnalysis')}</h3>
               <p className="range-trend">{data.analysis.trend_analysis}</p>
             </div>
           )}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 interface NewsItem {
@@ -48,6 +49,7 @@ function pct(v: number | null) {
 }
 
 export default function RangeNewsPanel({ symbol, startDate, endDate, priceChange, onClose, onAskAI }: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<RangeNewsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAll, setShowAll] = useState(false);
@@ -69,34 +71,34 @@ export default function RangeNewsPanel({ symbol, startDate, endDate, priceChange
   return (
     <div className="news-panel">
       <div className="news-panel-header">
-        <h2>Range News</h2>
+        <h2>{t('rangeNews.title')}</h2>
         <span className={`range-news-change ${isUp ? 'up' : 'down'}`}>
           {isUp ? '+' : ''}{change.toFixed(2)}%
         </span>
-        <button className="range-clear-btn" onClick={onClose}>Close</button>
+        <button className="range-clear-btn" onClick={onClose}>{t('rangeNews.close')}</button>
       </div>
 
       <div className="range-news-dates">
         {startDate} ~ {endDate}
-        {data && <span className="news-count" style={{ marginLeft: 8 }}>{data.total} articles</span>}
+        {data && <span className="news-count" style={{ marginLeft: 8 }}>{data.total} {t('news.articles')}</span>}
       </div>
 
       {loading ? (
         <div className="news-empty">
           <div className="range-loading">
             <div className="range-spinner" />
-            <span>Loading range news...</span>
+            <span>{t('rangeNews.loading')}</span>
           </div>
         </div>
       ) : !data || data.total === 0 ? (
-        <div className="news-empty">No news in this range</div>
+        <div className="news-empty">{t('rangeNews.noNews')}</div>
       ) : (
         <div className="news-list">
           {/* Bullish section */}
           {data.top_bullish.length > 0 && (
             <div className="range-news-section">
               <div className="range-news-section-title bullish">
-                ▲ Bullish News ({data.top_bullish.length})
+                {t('rangeNews.bullishNews')} ({data.top_bullish.length})
               </div>
               {data.top_bullish.map((item) => (
                 <RangeNewsCard key={item.news_id} item={item} />
@@ -108,7 +110,7 @@ export default function RangeNewsPanel({ symbol, startDate, endDate, priceChange
           {data.top_bearish.length > 0 && (
             <div className="range-news-section">
               <div className="range-news-section-title bearish">
-                ▼ Bearish News ({data.top_bearish.length})
+                {t('rangeNews.bearishNews')} ({data.top_bearish.length})
               </div>
               {data.top_bearish.map((item) => (
                 <RangeNewsCard key={item.news_id} item={item} />
@@ -123,8 +125,8 @@ export default function RangeNewsPanel({ symbol, startDate, endDate, priceChange
                 className="range-news-all-btn"
                 onClick={() => setShowAll(!showAll)}
               >
-                {showAll ? 'Hide' : 'Show'} all {data.total} articles
-                <span className="range-news-all-arrow">{showAll ? '▲' : '▼'}</span>
+                {showAll ? t('rangeNews.hideAll', { count: data.total }) : t('rangeNews.showAll', { count: data.total })}
+                <span className="range-news-all-arrow">{showAll ? '\u25B2' : '\u25BC'}</span>
               </button>
               {showAll && data.articles.map((item) => (
                 <RangeNewsCard key={item.news_id} item={item} />
@@ -137,7 +139,7 @@ export default function RangeNewsPanel({ symbol, startDate, endDate, priceChange
             className="range-news-ai-btn"
             onClick={() => onAskAI("What's driving the price movement?")}
           >
-            Ask PokieTicker
+            {t('rangeNews.askAI')}
           </button>
         </div>
       )}

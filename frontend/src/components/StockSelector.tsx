@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 
 interface Ticker {
@@ -14,22 +15,28 @@ interface Props {
   onAdd: (symbol: string) => void;
 }
 
-const GROUPS: Record<string, string[]> = {
-  'Tech': ['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'META', 'AMZN', 'CRM', 'ORCL', 'IBM', 'CSCO', 'NOW', 'WDAY', 'SNOW', 'DELL', 'ADBE'],
-  'AI / Chip': ['NVDA', 'AMD', 'TSM', 'AVGO', 'INTC', 'QCOM', 'ARM', 'AMAT', 'LRCX', 'MU', 'MRVL', 'SMCI', 'CRWV', 'TXN', 'ASML'],
-  'AI Software': ['AI', 'SOUN', 'SOUNW', 'CRWD', 'ANET', 'IDCC'],
-  'EV / Auto': ['TSLA', 'RIVN', 'LCID', 'NIO', 'LI', 'BYDDY', 'F', 'GM', 'STLA', 'TM'],
-  'China': ['BABA', 'JD', 'BIDU', 'NIO', 'LI', 'BILI', 'NTES', 'SE', 'MCHI', 'FXI'],
-  'Finance': ['V', 'MA', 'GS', 'MS', 'BAC', 'WFC', 'C', 'BLK', 'COIN', 'HOOD', 'MARA'],
-  'Media': ['NFLX', 'DIS', 'ROKU', 'WBD', 'ZM'],
-  'Consumer': ['COST', 'WMT', 'HD', 'TGT', 'NKE', 'SBUX', 'MCD', 'CMG', 'KO', 'EBAY', 'MELI'],
-  'Health': ['UNH', 'JNJ', 'LLY', 'MRNA', 'NVO'],
-  'Energy': ['XOM', 'CVX', 'OXY', 'XLE', 'USO'],
-  'Telecom': ['T', 'VZ'],
-  'Other': ['BA', 'UBER', 'GME', 'AMC', 'MULN', 'SQ', 'FB', 'AMJB', 'GLD', 'XLU', 'XLY', 'DIDI'],
+const GROUP_KEYS = [
+  'tech', 'aiChip', 'aiSoftware', 'evAuto', 'china', 'finance',
+  'media', 'consumer', 'health', 'energy', 'telecom', 'other',
+] as const;
+
+const GROUP_SYMBOLS: Record<string, string[]> = {
+  'tech': ['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'META', 'AMZN', 'CRM', 'ORCL', 'IBM', 'CSCO', 'NOW', 'WDAY', 'SNOW', 'DELL', 'ADBE'],
+  'aiChip': ['NVDA', 'AMD', 'TSM', 'AVGO', 'INTC', 'QCOM', 'ARM', 'AMAT', 'LRCX', 'MU', 'MRVL', 'SMCI', 'CRWV', 'TXN', 'ASML'],
+  'aiSoftware': ['AI', 'SOUN', 'SOUNW', 'CRWD', 'ANET', 'IDCC'],
+  'evAuto': ['TSLA', 'RIVN', 'LCID', 'NIO', 'LI', 'BYDDY', 'F', 'GM', 'STLA', 'TM'],
+  'china': ['BABA', 'JD', 'BIDU', 'NIO', 'LI', 'BILI', 'NTES', 'SE', 'MCHI', 'FXI'],
+  'finance': ['V', 'MA', 'GS', 'MS', 'BAC', 'WFC', 'C', 'BLK', 'COIN', 'HOOD', 'MARA'],
+  'media': ['NFLX', 'DIS', 'ROKU', 'WBD', 'ZM'],
+  'consumer': ['COST', 'WMT', 'HD', 'TGT', 'NKE', 'SBUX', 'MCD', 'CMG', 'KO', 'EBAY', 'MELI'],
+  'health': ['UNH', 'JNJ', 'LLY', 'MRNA', 'NVO'],
+  'energy': ['XOM', 'CVX', 'OXY', 'XLE', 'USO'],
+  'telecom': ['T', 'VZ'],
+  'other': ['BA', 'UBER', 'GME', 'AMC', 'MULN', 'SQ', 'FB', 'AMJB', 'GLD', 'XLU', 'XLY', 'DIDI'],
 };
 
 export default function StockSelector({ activeTickers, selectedSymbol, onSelect, onAdd }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Ticker[]>([]);
   const [showSearch, setShowSearch] = useState(false);
@@ -87,21 +94,22 @@ export default function StockSelector({ activeTickers, selectedSymbol, onSelect,
 
   // Build groups filtered to only tickers that exist in our data
   const activeSet = new Set(activeTickers);
-  const renderedGroups = Object.entries(GROUPS)
-    .map(([label, symbols]) => ({
-      label,
-      symbols: symbols.filter((s) => activeSet.has(s)),
+  const renderedGroups = GROUP_KEYS
+    .map((key) => ({
+      key,
+      label: t(`stock.${key}`),
+      symbols: (GROUP_SYMBOLS[key] || []).filter((s) => activeSet.has(s)),
     }))
     .filter((g) => g.symbols.length > 0);
 
   const assigned = new Set(renderedGroups.flatMap((g) => g.symbols));
   const ungrouped = activeTickers.filter((s) => !assigned.has(s)).sort();
   if (ungrouped.length > 0) {
-    const otherGroup = renderedGroups.find((g) => g.label === 'Other');
+    const otherGroup = renderedGroups.find((g) => g.key === 'other');
     if (otherGroup) {
       otherGroup.symbols.push(...ungrouped);
     } else {
-      renderedGroups.push({ label: 'Other', symbols: ungrouped });
+      renderedGroups.push({ key: 'other', label: t('stock.other'), symbols: ungrouped });
     }
   }
 
@@ -120,7 +128,7 @@ export default function StockSelector({ activeTickers, selectedSymbol, onSelect,
         {showPanel && (
           <div className="ticker-panel">
             {renderedGroups.map((group) => (
-              <div className="ticker-panel-group" key={group.label}>
+              <div className="ticker-panel-group" key={group.key}>
                 <div className="ticker-panel-group-label">{group.label}</div>
                 <div className="ticker-panel-group-items">
                   {group.symbols.map((sym) => (
@@ -143,7 +151,7 @@ export default function StockSelector({ activeTickers, selectedSymbol, onSelect,
       <div className="search-wrapper" ref={searchRef}>
         <input
           type="text"
-          placeholder="Search..."
+          placeholder={t('stock.search')}
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           onFocus={() => results.length > 0 && setShowSearch(true)}
