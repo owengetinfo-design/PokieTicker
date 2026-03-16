@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as d3 from 'd3';
 import axios from 'axios';
 
@@ -85,6 +86,7 @@ interface PlacedParticle extends Particle {
 }
 
 export default function CandlestickChart({ symbol, lockedNewsId, highlightedArticleIds, highlightColor, onHover, onRangeSelect, onArticleSelect, onDayClick }: Props) {
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -605,7 +607,7 @@ export default function CandlestickChart({ symbol, lockedNewsId, highlightedArti
 
   return (
     <div ref={containerRef} className="chart-container">
-      {loading && <div className="chart-loading">Loading...</div>}
+      {loading && <div className="chart-loading">{t('chart.loading')}</div>}
       <svg ref={svgRef}></svg>
       <canvas
         ref={canvasRef}

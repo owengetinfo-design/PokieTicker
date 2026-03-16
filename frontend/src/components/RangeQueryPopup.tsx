@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 
 interface RangeSelection {
@@ -16,16 +17,17 @@ interface Props {
   onClose: () => void;
 }
 
-const PRESET_QUESTIONS = [
-  "What's driving the price movement?",
-  "Summarize key news in this period",
-  "What are the bull/bear factors?",
-];
-
 export default function RangeQueryPopup({ range, chartRect, onAsk, onClose }: Props) {
+  const { t } = useTranslation();
   const [custom, setCustom] = useState('');
   const popupRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const PRESET_QUESTIONS = [
+    t('rangeQuery.q1'),
+    t('rangeQuery.q2'),
+    t('rangeQuery.q3'),
+  ];
 
   // Close on click outside
   useEffect(() => {
@@ -66,7 +68,7 @@ export default function RangeQueryPopup({ range, chartRect, onAsk, onClose }: Pr
         </span>
       </div>
 
-      <div className="range-popup-label">Ask PokieTicker</div>
+      <div className="range-popup-label">{t('rangeQuery.askLabel')}</div>
 
       {PRESET_QUESTIONS.map((q) => (
         <button
@@ -89,7 +91,7 @@ export default function RangeQueryPopup({ range, chartRect, onAsk, onClose }: Pr
         <input
           ref={inputRef}
           type="text"
-          placeholder="Ask your own question..."
+          placeholder={t('rangeQuery.placeholder')}
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
         />

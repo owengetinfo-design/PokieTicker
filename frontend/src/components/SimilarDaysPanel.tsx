@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+
 
 interface NewsSnippet {
   title: string;
@@ -39,6 +41,7 @@ interface Props {
 }
 
 export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
+  const { t } = useTranslation();
   const [data, setData] = useState<SimilarDaysData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,23 +52,23 @@ export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
     axios
       .get(`/api/predict/${symbol}/similar-days?date=${date}`)
       .then((res) => setData(res.data))
-      .catch(() => setError('Failed to find similar days'))
+      .catch(() => setError(t('similar.failed')))
       .finally(() => setLoading(false));
   }, [symbol, date]);
 
   return (
     <div className="news-panel">
       <div className="news-panel-header">
-        <h2>Similar Days</h2>
+        <h2>{t('similar.title')}</h2>
         <span className="news-date-badge">{date}</span>
-        <button className="range-clear-btn" onClick={onClose}>Close</button>
+        <button className="range-clear-btn" onClick={onClose}>{t('similar.close')}</button>
       </div>
 
       {loading ? (
         <div className="news-empty">
           <div className="range-loading">
             <div className="range-spinner" />
-            <span>Finding similar days...</span>
+            <span>{t('similar.finding')}</span>
           </div>
         </div>
       ) : error ? (
@@ -74,24 +77,24 @@ export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
         <div className="news-list">
           {/* Target day info */}
           <div className="sim-target-card">
-            <div className="sim-section-label">Target Day Features</div>
+            <div className="sim-section-label">{t('similar.targetFeatures')}</div>
             <div className="sim-feat-grid">
               <div className="sim-feat">
-                <span className="sim-feat-label">Sentiment</span>
+                <span className="sim-feat-label">{t('similar.sentiment')}</span>
                 <span className={`sim-feat-val ${(data.target_features.sentiment_score ?? 0) >= 0 ? 'up' : 'down'}`}>
                   {(data.target_features.sentiment_score ?? 0).toFixed(2)}
                 </span>
               </div>
               <div className="sim-feat">
-                <span className="sim-feat-label">Articles</span>
+                <span className="sim-feat-label">{t('similar.articles')}</span>
                 <span className="sim-feat-val">{data.target_features.n_articles ?? 0}</span>
               </div>
               <div className="sim-feat">
-                <span className="sim-feat-label">RSI</span>
+                <span className="sim-feat-label">{t('similar.rsi')}</span>
                 <span className="sim-feat-val">{(data.target_features.rsi_14 ?? 0).toFixed(0)}</span>
               </div>
               <div className="sim-feat">
-                <span className="sim-feat-label">Prev 1D</span>
+                <span className="sim-feat-label">{t('similar.prev1d')}</span>
                 <span className={`sim-feat-val ${(data.target_features.ret_1d ?? 0) >= 0 ? 'up' : 'down'}`}>
                   {((data.target_features.ret_1d ?? 0) * 100).toFixed(1)}%
                 </span>
@@ -101,28 +104,28 @@ export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
 
           {/* Stats summary */}
           <div className="sim-stats-card">
-            <div className="sim-section-label">Historical Pattern ({data.stats.count} similar days)</div>
+            <div className="sim-section-label">{t('similar.historicalPattern', { count: data.stats.count })}</div>
             <div className="sim-stats-grid">
               <div className="sim-stat-block">
-                <span className="sim-stat-title">T+1 Up Ratio</span>
+                <span className="sim-stat-title">{t('similar.t1UpRatio')}</span>
                 <span className={`sim-stat-big ${(data.stats.up_ratio_t1 ?? 0) >= 0.5 ? 'up' : 'down'}`}>
                   {data.stats.up_ratio_t1 !== null ? `${(data.stats.up_ratio_t1 * 100).toFixed(0)}%` : '-'}
                 </span>
               </div>
               <div className="sim-stat-block">
-                <span className="sim-stat-title">T+5 Up Ratio</span>
+                <span className="sim-stat-title">{t('similar.t5UpRatio')}</span>
                 <span className={`sim-stat-big ${(data.stats.up_ratio_t5 ?? 0) >= 0.5 ? 'up' : 'down'}`}>
                   {data.stats.up_ratio_t5 !== null ? `${(data.stats.up_ratio_t5 * 100).toFixed(0)}%` : '-'}
                 </span>
               </div>
               <div className="sim-stat-block">
-                <span className="sim-stat-title">Avg T+1</span>
+                <span className="sim-stat-title">{t('similar.avgT1')}</span>
                 <span className={`sim-stat-big ${(data.stats.avg_ret_t1 ?? 0) >= 0 ? 'up' : 'down'}`}>
                   {data.stats.avg_ret_t1 !== null ? `${data.stats.avg_ret_t1 >= 0 ? '+' : ''}${data.stats.avg_ret_t1.toFixed(2)}%` : '-'}
                 </span>
               </div>
               <div className="sim-stat-block">
-                <span className="sim-stat-title">Avg T+5</span>
+                <span className="sim-stat-title">{t('similar.avgT5')}</span>
                 <span className={`sim-stat-big ${(data.stats.avg_ret_t5 ?? 0) >= 0 ? 'up' : 'down'}`}>
                   {data.stats.avg_ret_t5 !== null ? `${data.stats.avg_ret_t5 >= 0 ? '+' : ''}${data.stats.avg_ret_t5.toFixed(2)}%` : '-'}
                 </span>
@@ -131,7 +134,7 @@ export default function SimilarDaysPanel({ symbol, date, onClose }: Props) {
           </div>
 
           {/* Similar days list */}
-          <div className="sim-section-label" style={{ padding: '8px 4px 4px' }}>Similar Days</div>
+          <div className="sim-section-label" style={{ padding: '8px 4px 4px' }}>{t('similar.similarDays')}</div>
           {data.similar_days.map((day) => (
             <div key={day.date} className="sim-day-card">
               <div className="sim-day-header">

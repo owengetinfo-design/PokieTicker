@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import StockSelector from './components/StockSelector';
 import CandlestickChart from './components/CandlestickChart';
@@ -25,6 +26,7 @@ interface ArticleSelection {
 }
 
 function App() {
+  const { t } = useTranslation();
   const [activeTickers, setActiveTickers] = useState<string[]>([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
@@ -224,7 +226,7 @@ function App() {
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1>PokieTicker</h1>
+          <h1>{t('app.title')}</h1>
         </div>
         <StockSelector
           activeTickers={activeTickers}
@@ -235,7 +237,7 @@ function App() {
         {selectedRange ? (
           <div className="header-ohlc">
             <span className="ohlc-date">{selectedRange.startDate} ~ {selectedRange.endDate}</span>
-            <span className="range-badge">Range Selected</span>
+            <span className="range-badge">{t('app.rangeSelected')}</span>
           </div>
         ) : hoveredOhlc ? (
           <div className="header-ohlc">
@@ -291,7 +293,7 @@ function App() {
               )}
             </>
           ) : (
-            <div className="chart-placeholder">Select a ticker to view the chart</div>
+            <div className="chart-placeholder">{t('app.selectTicker')}</div>
           )}
         </div>
         {selectedSymbol && (
@@ -310,6 +312,7 @@ function App() {
           {renderRightPanel()}
         </div>
       </main>
+
     </div>
   );
 }
