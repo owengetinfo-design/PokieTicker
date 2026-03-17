@@ -65,6 +65,17 @@ function getSentimentColor(s: string | null): string {
   return (s && SENTIMENT_COLOR[s]) || SENTIMENT_COLOR_DEFAULT;
 }
 
+// Market-specific candle colors
+// A-shares and HK: Red = Up, Green = Down (opposite of US)
+function getMarketColors(symbol: string): { up: string; down: string } {
+  // Check if it's an A-share (.SH/.SZ) or HK stock (.HK)
+  if (symbol.endsWith('.SH') || symbol.endsWith('.SZ') || symbol.endsWith('.HK')) {
+    return { up: '#ff4d4f', down: '#52c41a' }; // Red up, Green down
+  }
+  // US stocks: Green up, Red down
+  return { up: '#52c41a', down: '#ff4d4f' };
+}
+
 function getParticleRadius(relevance: string | null, rt1: number | null): number {
   let r = 2;
   if (relevance === 'relevant') r += 0.8;
@@ -273,9 +284,10 @@ export default function CandlestickChart({ symbol, lockedNewsId, highlightedArti
       .style('font-size', '12px')
       .style('fill', '#555');
 
-    // Y Axis
+    // Y Axis - use $ for US stocks, no prefix for CN/HK
+    const isUSD = !symbol.includes('.SH') && !symbol.includes('.SZ') && !symbol.includes('.HK');
     g.append('g')
-      .call(d3.axisLeft(y).ticks(6).tickFormat((d) => `$${Number(d).toFixed(0)}`))
+      .call(d3.axisLeft(y).ticks(6).tickFormat((d) => isUSD ? `$${Number(d).toFixed(0)}` : `${Number(d).toFixed(0)}`))
       .selectAll('text')
       .style('font-size', '12px')
       .style('fill', '#555');
@@ -284,6 +296,9 @@ export default function CandlestickChart({ symbol, lockedNewsId, highlightedArti
     g.selectAll('.tick line').style('stroke', '#1a2030');
 
     const candleWidth = Math.max(1.5, (width / data.length) * 0.65);
+
+    // Get market-specific colors
+    const marketColors = getMarketColors(symbol);
 
     // Candlesticks
     const candles = g.selectAll('.candle').data(data).enter().append('g').attr('class', 'candle');
@@ -294,7 +309,7 @@ export default function CandlestickChart({ symbol, lockedNewsId, highlightedArti
       .attr('x2', (d) => x(d.date))
       .attr('y1', (d) => y(d.high))
       .attr('y2', (d) => y(d.low))
-      .attr('stroke', (d) => (d.close >= d.open ? '#00e676' : '#ff5252'))
+      .attr('stroke', (d) => (d.close >= d.open ? marketColors.up : marketColors.down))
       .attr('stroke-width', 1);
 
     // Bodies
@@ -303,7 +318,7 @@ export default function CandlestickChart({ symbol, lockedNewsId, highlightedArti
       .attr('y', (d) => y(Math.max(d.open, d.close)))
       .attr('width', candleWidth)
       .attr('height', (d) => Math.max(1, Math.abs(y(d.open) - y(d.close))))
-      .attr('fill', (d) => (d.close >= d.open ? '#00e676' : '#ff5252'));
+      .attr('fill', (d) => (d.close >= d.open ? marketColors.up : marketColors.down));
 
     // --- Place particles overlaid on K-line ---
     // Group particles by trade_date

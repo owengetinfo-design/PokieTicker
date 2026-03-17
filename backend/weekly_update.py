@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 
 from backend.config import settings
 from backend.database import get_conn
-from backend.polygon.client import fetch_ohlc, fetch_news, http_get, BASE
+from backend.data_sources import fetch_ohlc, fetch_news, get_market
+from backend.data_sources.polygon_client import http_get, BASE
 from backend.pipeline.alignment import align_news_for_symbol
 from backend.pipeline.layer0 import run_layer0
 
@@ -43,7 +44,10 @@ def update_ohlc(symbol: str, last_fetch: str) -> int:
     if start > TODAY:
         return 0
 
-    rate_limit()
+    market = get_market(symbol)
+    if market == 'US':
+        rate_limit()
+
     try:
         rows = fetch_ohlc(symbol, start, TODAY)
     except Exception as e:
@@ -77,53 +81,64 @@ def update_news(symbol: str, last_fetch: str) -> int:
     if start > TODAY:
         return 0
 
-    all_articles = []
-    seen_ids = set()
-    url = f"{BASE}/v2/reference/news"
-    params = {
-        "ticker": symbol,
-        "published_utc.gte": start,
-        "published_utc.lte": TODAY,
-        "limit": 50,
-        "order": "asc",
-    }
-    next_url = None
+    market = get_market(symbol)
 
-    while True:
-        rate_limit()
+    if market == 'US':
+        # Polygon news for US stocks
+        all_articles = []
+        seen_ids = set()
+        url = f"{BASE}/v2/reference/news"
+        params = {
+            "ticker": symbol,
+            "published_utc.gte": start,
+            "published_utc.lte": TODAY,
+            "limit": 50,
+            "order": "asc",
+        }
+        next_url = None
+
+        while True:
+            rate_limit()
+            try:
+                resp = http_get(next_url or url, params=None if next_url else params)
+            except Exception as e:
+                print(f"  News error: {e}")
+                break
+
+            data = resp.json()
+            results = data.get("results") or []
+            if not results:
+                break
+
+            for r in results:
+                rid = r.get("id")
+                if rid and rid in seen_ids:
+                    continue
+                all_articles.append({
+                    "id": rid,
+                    "publisher": (r.get("publisher") or {}).get("name"),
+                    "title": r.get("title"),
+                    "author": r.get("author"),
+                    "published_utc": r.get("published_utc"),
+                    "amp_url": r.get("amp_url"),
+                    "article_url": r.get("article_url"),
+                    "tickers": r.get("tickers"),
+                    "description": r.get("description"),
+                    "insights": r.get("insights"),
+                })
+                if rid:
+                    seen_ids.add(rid)
+
+            next_url = data.get("next_url")
+            if not next_url:
+                break
+    else:
+        # CN/HK stocks use AKShare
         try:
-            resp = http_get(next_url or url, params=None if next_url else params)
+            all_articles = fetch_news(symbol, start, TODAY)
         except Exception as e:
             print(f"  News error: {e}")
-            break
-
-        data = resp.json()
-        results = data.get("results") or []
-        if not results:
-            break
-
-        for r in results:
-            rid = r.get("id")
-            if rid and rid in seen_ids:
-                continue
-            all_articles.append({
-                "id": rid,
-                "publisher": (r.get("publisher") or {}).get("name"),
-                "title": r.get("title"),
-                "author": r.get("author"),
-                "published_utc": r.get("published_utc"),
-                "amp_url": r.get("amp_url"),
-                "article_url": r.get("article_url"),
-                "tickers": r.get("tickers"),
-                "description": r.get("description"),
-                "insights": r.get("insights"),
-            })
-            if rid:
-                seen_ids.add(rid)
-
-        next_url = data.get("next_url")
-        if not next_url:
-            break
+            all_articles = []
 
     if not all_articles:
         return 0
@@ -176,12 +191,13 @@ def main():
         symbol = t["symbol"]
         ohlc_fetch = t["last_ohlc_fetch"] or "2024-01-01"
         news_fetch = t["last_news_fetch"] or ohlc_fetch
+        market = get_market(symbol)
 
         # Skip if already updated today
         if ohlc_fetch >= TODAY and news_fetch >= TODAY:
             continue
 
-        print(f"[{i}/{len(tickers)}] {symbol}")
+        print(f"[{i}/{len(tickers)}] {symbol} ({market})")
 
         # Update OHLC
         ohlc_count = update_ohlc(symbol, ohlc_fetch)

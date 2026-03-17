@@ -3,9 +3,10 @@ from backend.config import settings
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS tickers (
-    symbol        TEXT PRIMARY KEY,
+    symbol        TEXT PRIMARY KEY,      -- e.g., "600000.SH", "00700.HK", "AAPL"
     name          TEXT,
     sector        TEXT,
+    market        TEXT DEFAULT 'US',     -- 'US', 'CN', 'HK'
     last_ohlc_fetch   TEXT,
     last_news_fetch   TEXT
 );
