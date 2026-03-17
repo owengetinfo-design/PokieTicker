@@ -321,10 +321,58 @@ def generate_forecast(symbol: str, window_days: int = 7) -> dict:
             "baseline_accuracy": meta.get("baseline", 0),
         }
 
-    if prediction is None:
-        return {"error": f"No trained model for {symbol}"}
+    # 4. If no ML model, build a simplified prediction from news sentiment
+    has_model = prediction is not None
+    if not has_model:
+        # Build simplified prediction based on news sentiment
+        sentiment_ratio = news_summary["sentiment_ratio"]
+        n_total = news_summary["total"]
 
-    # 4. Similar historical periods
+        # Need at least some news to make a prediction
+        if n_total > 0:
+            # Determine direction from sentiment
+            if sentiment_ratio > 0.2:
+                direction = "up"
+                confidence = min(0.5 + sentiment_ratio * 0.3, 0.8)
+            elif sentiment_ratio < -0.2:
+                direction = "down"
+                confidence = min(0.5 + abs(sentiment_ratio) * 0.3, 0.8)
+            else:
+                direction = "up"  # Default when neutral
+                confidence = 0.5
+
+            prediction = {
+                "t1": {
+                    "direction": direction,
+                    "confidence": round(confidence, 4),
+                    "model_type": "NewsSentiment",
+                    "top_drivers": [],
+                    "model_accuracy": None,
+                    "baseline_accuracy": None,
+                },
+                "t3": {
+                    "direction": direction,
+                    "confidence": round(confidence * 0.9, 4),
+                    "model_type": "NewsSentiment",
+                    "top_drivers": [],
+                    "model_accuracy": None,
+                    "baseline_accuracy": None,
+                },
+            }
+        else:
+            # No news at all
+            prediction = {
+                "t1": {
+                    "direction": "up",
+                    "confidence": 0.5,
+                    "model_type": "NoModel",
+                    "top_drivers": [],
+                    "model_accuracy": None,
+                    "baseline_accuracy": None,
+                }
+            }
+
+    # 5. Similar historical periods
     similar_periods = _find_similar_periods(df, window_vec, window_days, top_k=10)
 
     # Stats from similar periods

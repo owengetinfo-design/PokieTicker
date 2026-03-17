@@ -57,9 +57,8 @@ function App() {
     axios
       .get('/api/stocks')
       .then((res) => {
-        const tickers = res.data
-          .filter((t: any) => t.last_ohlc_fetch)
-          .map((t: any) => t.symbol);
+        // Show all tickers, not just ones with data
+        const tickers = res.data.map((t: any) => t.symbol);
         setActiveTickers(tickers);
         if (tickers.length > 0 && !selectedSymbol) {
           setSelectedSymbol(tickers[0]);

@@ -151,39 +151,56 @@ def get_news_categories(symbol: str):
     conn.close()
 
     CATEGORY_KEYWORDS = {
-        "market": [
-            "market", "stock", "rally", "sell-off", "selloff", "trading",
-            "wall street", "s&p", "nasdaq", "dow", "index", "bull", "bear",
-            "correction", "volatility",
-        ],
-        "policy": [
-            "regulation", "fed", "federal reserve", "tariff", "sanction",
-            "interest rate", "policy", "government", "congress", "sec",
-            "trade war", "ban", "legislation", "tax",
-        ],
-        "earnings": [
-            "earnings", "revenue", "profit", "quarter", "eps", "guidance",
-            "forecast", "income", "sales", "beat", "miss", "outlook",
-            "financial results",
-        ],
-        "product_tech": [
-            "product", "ai", "chip", "cloud", "launch", "patent",
-            "technology", "innovation", "release", "platform", "model",
-            "software", "hardware", "gpu", "autonomous",
-        ],
-        "competition": [
-            "competitor", "rival", "market share", "overtake", "compete",
-            "competition", "vs", "versus", "battle", "challenge",
-        ],
-        "management": [
-            "ceo", "executive", "resign", "layoff", "restructure",
-            "management", "leadership", "appoint", "hire", "board",
-            "chairman",
-        ],
+        "market": {
+            "en": ["market", "stock", "rally", "sell-off", "selloff", "trading",
+                   "wall street", "s&p", "nasdaq", "dow", "index", "bull", "bear",
+                   "correction", "volatility"],
+            "zh": ["市场", "股市", "大盘", "牛市", "熊市", "反弹", "下跌", "上涨",
+                   "震荡", "成交量", "行情", "股指"],
+        },
+        "policy": {
+            "en": ["regulation", "fed", "federal reserve", "tariff", "sanction",
+                   "interest rate", "policy", "government", "congress", "sec",
+                   "trade war", "ban", "legislation", "tax"],
+            "zh": ["政策", "监管", "央行", "降准", "加息", "证监会", "银保监会",
+                   "美联储", "关税", "制裁", "利率", "政府", "立法", "税收"],
+        },
+        "earnings": {
+            "en": ["earnings", "revenue", "profit", "quarter", "eps", "guidance",
+                   "forecast", "income", "sales", "beat", "miss", "outlook",
+                   "financial results"],
+            "zh": ["财报", "业绩", "营收", "利润", "净利润", "同比增长", "季度",
+                   "年报", "中报", "一季报", "三季报", "预期", "盈利", "亏损"],
+        },
+        "product_tech": {
+            "en": ["product", "ai", "chip", "cloud", "launch", "patent",
+                   "technology", "innovation", "release", "platform", "model",
+                   "software", "hardware", "gpu", "autonomous"],
+            "zh": ["产品", "人工智能", "芯片", "云", "发布", "专利", "技术", "创新",
+                   "平台", "模型", "软件", "硬件", "显卡", "自动驾驶", "研发"],
+        },
+        "competition": {
+            "en": ["competitor", "rival", "market share", "overtake", "compete",
+                   "competition", "vs", "versus", "battle", "challenge"],
+            "zh": ["竞争", "竞争对手", "市场份额", "超越", "竞争", "对战", "挑战"],
+        },
+        "management": {
+            "en": ["ceo", "executive", "resign", "layoff", "restructure",
+                   "management", "leadership", "appoint", "hire", "board",
+                   "chairman"],
+            "zh": ["首席执行官", "高管", "辞职", "裁员", "重组", "管理层",
+                   "领导", "任命", "招聘", "董事会", "董事长", "总经理"],
+        },
+    }
+
+    # Flatten keywords for matching (combine en + zh)
+    FLAT_KEYWORDS = {
+        cat: data["en"] + data["zh"]
+        for cat, data in CATEGORY_KEYWORDS.items()
     }
 
     categories = {}
-    for cat, keywords in CATEGORY_KEYWORDS.items():
+    for cat, keywords in FLAT_KEYWORDS.items():
         categories[cat] = {
             "label": cat,
             "count": 0,
@@ -202,7 +219,7 @@ def get_news_categories(symbol: str):
             (r["reason_decrease"] or ""),
         ]).lower()
         sentiment = r["sentiment"]  # positive / negative / neutral / None
-        for cat, keywords in CATEGORY_KEYWORDS.items():
+        for cat, keywords in FLAT_KEYWORDS.items():
             if any(kw in text for kw in keywords):
                 categories[cat]["count"] += 1
                 categories[cat]["article_ids"].append(r["news_id"])
